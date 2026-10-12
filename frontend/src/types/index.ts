@@ -103,33 +103,38 @@ export interface GraphData {
   }[];
   edges: {
     id: string;
-    source: string;
-    target: string;
-    label: string;
+    source?: string;
+    target?: string;
+    from?: string;
+    to?: string;
+    label?: string;
+    type?: string;
     properties?: Record<string, any>;
   }[];
 }
 
 export interface AnalyticsData {
-  statusCounts: { _id: string; count: number }[];
-  typeMetrics: {
+  statusCounts?: { _id: string; count: number }[];
+  typeMetrics?: {
     _id: string;
     avgBattery: number;
     avgFuel: number;
-    totalVehicles: number;
+    totalVehicles?: number;
     avgMileage: number;
+    avgDailyRate?: number;
+    count?: number;
   }[];
-  alertMetrics: {
+  alertMetrics?: {
     _id: { harshBraking: boolean; geofenceViolation: boolean };
     count: number;
   }[];
-  rentalRevenue: {
+  rentalRevenue?: {
     _id: string;
     totalRevenue: number;
     totalDistanceKm: number;
     count: number;
   }[];
-  hubStats: {
+  hubStats?: {
     hubId: string;
     hubName: string;
     city: string;
@@ -138,15 +143,24 @@ export interface AnalyticsData {
     occupancyPct: number;
     status: 'OPTIMAL' | 'SURPLUS' | 'DEFICIT';
   }[];
-  recentAlerts: TelemetryPoint[];
+  recentAlerts?: TelemetryPoint[];
+  anomalies?: any[];
 }
 
 export interface RebalancingItem {
-  fromHubId: string;
-  fromHubName: string;
-  toHubId: string;
-  toHubName: string;
-  recommendedVehicles: number;
-  distanceKm: number;
-  reason: string;
+  fromHubId?: string;
+  fromHubName?: string;
+  toHubId?: string;
+  toHubName?: string;
+  recommendedVehicles?: number;
+  distanceKm?: number;
+  reason?: string;
+  recommendationId?: string;
+  recommendedTransfers?: number;
+  vehicleType?: string;
+  sourceHub?: { id: string; name: string; city?: string; surplus?: number; deficit?: number } | any;
+  targetHub?: { id: string; name: string; city?: string; surplus?: number; deficit?: number } | any;
+  priority?: 'HIGH' | 'MEDIUM' | 'LOW' | string;
+  rationale?: string;
+  suggestedRoute?: any;
 }

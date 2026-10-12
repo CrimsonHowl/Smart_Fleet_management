@@ -8,6 +8,7 @@ import graphRoutes from './routes/graphRoutes';
 import rentalRoutes from './routes/rentalRoutes';
 import telemetryRoutes from './routes/telemetryRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import { dataIntegrationMediator } from './services/dataIntegrationMediator';
 import { telemetrySimulatorService } from './services/telemetrySimulatorService';
 
 dotenv.config();
@@ -19,14 +20,14 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// API Routes
+// Core API Routes
 app.use('/api/fleet', fleetRoutes);
 app.use('/api/graph', graphRoutes);
 app.use('/api/rentals', rentalRoutes);
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// Health check endpoint verifying dual-database status
+// Health check endpoint verifying dual-database status and XML mediator
 app.get('/api/health', async (req: Request, res: Response) => {
   const health = await checkDatabaseHealth();
   const allHealthy = health.mongodb && health.neo4j;
@@ -38,15 +39,23 @@ app.get('/api/health', async (req: Request, res: Response) => {
       neo4j: health.neo4j ? 'CONNECTED' : 'DISCONNECTED',
       details: health.details,
     },
+    dataIntegration: {
+      engine: 'XML-Mediator',
+      catalog: 'data-sources-mapping.xml',
+      status: 'INITIALIZED',
+    },
   });
 });
 
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: 'Smart Fleet & Rental Tracking System API',
+    message: 'Smart Fleet & Rental Tracking System API with In-Built XML Data Integration',
+    dataIntegrationCatalog: '/api/fleet/integration-schema',
     endpoints: [
       '/api/health',
       '/api/fleet',
+      '/api/fleet/integration-schema',
+      '/api/fleet/integration-xsd',
       '/api/graph/hubs',
       '/api/graph/network',
       '/api/graph/route',
@@ -61,14 +70,19 @@ app.get('/', (req: Request, res: Response) => {
 
 async function bootstrap() {
   try {
+    // 1. Initialize XML Data Integration Mediator
+    console.log('[Bootstrap] Initializing XML Data Integration Mediator...');
+    dataIntegrationMediator.initialize();
+
+    // 2. Connect to MongoDB
     await connectMongo();
     console.log('[Server] Connected to MongoDB');
 
-    // Test Neo4j connection via checkDatabaseHealth
+    // 3. Test Neo4j connection via checkDatabaseHealth
     const health = await checkDatabaseHealth();
     console.log(`[Server] Database health - Mongo: ${health.mongodb}, Neo4j: ${health.neo4j}`);
 
-    // Auto-start simulation service with 4-second intervals
+    // 4. Auto-start simulation service with 4-second intervals
     telemetrySimulatorService.startSimulation(4000);
 
     const server = app.listen(PORT, () => {

@@ -88,6 +88,56 @@ Rather than forcing an all-in-one database model, SmartFleet implements **Polygl
 
 ---
 
+## 📑 In-Built XML-Based Heterogeneous Data Integration
+
+SmartFleet implements **Mediator-Wrapper Heterogeneous Data Integration** as the native, in-built foundation of its data access layer. Rather than writing ad-hoc, hardcoded multi-database joins, the entire data integration flow is formally governed by an **XML Schema Mapping Catalog** (`backend/src/config/data-sources-mapping.xml`) and its formal W3C XML Schema Definition (`data-sources-mapping.xsd`).
+
+```
+                              ┌───────────────────────────────────────────┐
+                              │     SmartFleet Web Client (Frontend)      │
+                              └─────────────────────┬─────────────────────┘
+                                                    │ Single Query (e.g. GET /api/fleet)
+                                                    ▼
+                              ┌───────────────────────────────────────────┐
+                              │       XML Data Integration Mediator       │
+                              │     (backend/src/services/mediator)       │
+                              ├───────────────────────────────────────────┤
+                              │        data-sources-mapping.xml           │
+                              │  (Defines MongoDB vs Neo4j Provenance)    │
+                              └─────────────┬───────────────┬─────────────┘
+                                            │               │
+                        1. Fetch IoT State  │               │ 2. Fetch Graph Topology
+                           & Specifications │               │    & Station Occupancy
+                                            ▼               ▼
+                                   ┌────────────────┐┌────────────────┐
+                                   │    MongoDB     ││     Neo4j      │
+                                   │ (Document DB)  ││   (Graph DB)   │
+                                   └────────┬───────┘└────────┬───────┘
+                                            │                 │
+                                            └────────┬────────┘
+                                                     ▼
+                                      In-Memory Hash Join Reconciliation
+                                      (Equi-Join on primary key 'vin')
+                                                     │
+                                                     ▼
+                                      Unified Integrated Entity Response
+```
+
+### 1. The XML Mapping Specification (`data-sources-mapping.xml`)
+The XML catalog uses the **Global-as-View (GAV)** integration pattern, defining the unified global entity `Vehicle` as a composite view over the two underlying heterogeneous stores:
+- **MongoDB Source Mapping (`mongodb_docstore`)**: Provides physical attributes and high-frequency IoT telemetry (`vin`, `make`, `model`, `batteryPct`, `speedKmH`, `engineTempC`, `currentLocation`).
+- **Neo4j Source Mapping (`neo4j_graphstore`)**: Provides network topology, station capacity, and relational lineage via graph traversals (`(:Vehicle)-[:CURRENTLY_AT]->(:Hub)`, `[:CONNECTED_TO]`, and `(:Customer)-[:RENTED]->(:Vehicle)`).
+- **Join Strategy (`<JoinStrategy type="EQUIVALENCE">`)**: Reconciles records across both database engines via equi-join on `mongodb.vin == neo4j.vin`.
+
+### 2. Single Query Flow
+The frontend makes a **single query** (`GET /api/fleet` or `GET /api/fleet/:vin`). The backend XML mediator inspects `data-sources-mapping.xml`, queries MongoDB and Neo4j concurrently, joins them on the XML join key, and delivers the fused dataset to the frontend in a single round-trip.
+
+### 3. XML Inspection Endpoints
+Evaluators and examiners can inspect the live XML configuration directly via:
+- `GET /api/fleet/integration-schema` — Serves the raw `data-sources-mapping.xml` mapping catalog.
+- `GET /api/fleet/integration-xsd` — Serves the formal W3C XML Schema Definition (`data-sources-mapping.xsd`).
+- `GET /api/fleet/integration-schema?format=json` — Returns the parsed catalog metadata as JSON.
+
 ## 🚀 Key Application Features
 
 ### 1. Live OSM India Fleet Map & Real-Time Highway Transit

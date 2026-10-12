@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataIntegrationMapping
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    system="SmartFleet Enterprise Big Data Platform"
+    version="1.0">
+
+  <!-- ============================================================== -->
+  <!-- 1. HETEROGENEOUS BIG DATA STORAGE PLATFORMS                    -->
+  <!-- ============================================================== -->
+  <DataSources>
+    <DataSource id="mongodb_docstore" type="DOCUMENT_STORE" engine="MongoDB" version="7.0">
+      <Description>Primary store for high-frequency IoT sensor telemetry, vehicle physical specs, and rental billing</Description>
+      <Collections>
+        <Collection name="vehicles" primaryKey="vin" />
+        <Collection name="telemetries" foreignKey="vin" />
+        <Collection name="rentals" primaryKey="rentalId" />
+      </Collections>
+    </DataSource>
+
+    <DataSource id="neo4j_graphstore" type="GRAPH_DATABASE" engine="Neo4j" version="5.26">
+      <Description>Primary store for national highway topology, station capacities, toll weights, and customer lineage</Description>
+      <GraphEntities>
+        <NodeLabels>Hub, Vehicle, Customer</NodeLabels>
+        <Relationships>CONNECTED_TO, CURRENTLY_AT, RENTED</Relationships>
+      </GraphEntities>
+    </DataSource>
+  </DataSources>
+
+  <!-- ============================================================== -->
+  <!-- 2. GLOBAL-AS-VIEW (GAV) INTEGRATED ENTITY SPECIFICATIONS        -->
+  <!-- ============================================================== -->
+  <Entities>
+
+    <!-- Core Entity: Vehicle -->
+    <Entity name="Vehicle" primaryJoinKey="vin">
+      <Description>Unified vehicle profile integrating MongoDB IoT state with Neo4j spatial topology</Description>
+
+      <!-- [A] Attributes supplied by MongoDB (Document Store) -->
+      <Source database="mongodb_docstore" collection="vehicles">
+        <Fields>
+          <Field name="vin" isKey="true" type="string" description="Unique Vehicle Identification Number" />
+          <Field name="licensePlate" type="string" />
+          <Field name="make" type="string" />
+          <Field name="model" type="string" />
+          <Field name="year" type="number" />
+          <Field name="type" type="string" description="Propulsion category: ELECTRIC, SUV, SEDAN, VAN, TRUCK" />
+          <Field name="status" type="string" description="Operational status: AVAILABLE, ON_RENT, MAINTENANCE, TRANSIT" />
+          
+          <!-- High-frequency IoT Telemetry Stream -->
+          <Field name="batteryPct" type="number" unit="percentage" description="Real-time EV battery charge level" />
+          <Field name="fuelPct" type="number" unit="percentage" description="Real-time ICE fuel reserve level" />
+          <Field name="odometerKm" type="number" unit="km" description="Cumulative mileage" />
+          <Field name="dailyRate" type="number" currency="USD" description="Base daily rental tariff" />
+          <Field name="speedKmH" type="number" unit="km/h" description="Current instantaneous speed" />
+          <Field name="engineTempC" type="number" unit="celsius" description="Real-time powertrain temperature" />
+          <Field name="currentLocation" type="geoPoint" description="GeoJSON coordinates [longitude, latitude]" />
+          <Field name="lastSeen" type="date" description="Last telemetry heartbeat timestamp" />
+          <Field name="activeRentalId" type="string" description="Active rental contract ID" />
+        </Fields>
+      </Source>
+
+      <!-- [B] Attributes supplied by Neo4j (Graph Store) -->
+      <Source database="neo4j_graphstore" entity="Vehicle">
+        <!-- Station Hub Data resolved via [:CURRENTLY_AT] graph relationship -->
+        <GraphTraversal pattern="MATCH (v:Vehicle {vin: $vin})-[:CURRENTLY_AT]->(h:Hub)">
+          <Fields>
+            <Field name="currentHubId" sourceProperty="h.id" type="string" description="Station hub unique identifier" />
+            <Field name="currentHubName" sourceProperty="h.name" type="string" description="Station hub official name" />
+            <Field name="currentHubCity" sourceProperty="h.city" type="string" description="Station city location" />
+            <Field name="currentHubCapacity" sourceProperty="h.capacity" type="number" description="Station vehicle capacity" />
+            <Field name="currentHubType" sourceProperty="h.type" type="string" description="Hub category: CENTRAL, AIRPORT, SUBURB, PORT" />
+          </Fields>
+        </GraphTraversal>
+
+        <!-- Connected Corridor Highways from Current Station resolved via [:CONNECTED_TO] -->
+        <GraphTraversal pattern="MATCH (v:Vehicle {vin: $vin})-[:CURRENTLY_AT]->(h:Hub)-[r:CONNECTED_TO]->(target:Hub)">
+          <Fields>
+            <Field name="connectedCorridors" sourceProperty="target.name, r.distanceKm, r.durationMinutes, r.tollFee" type="list" description="Adjacent highway routes from current station" />
+          </Fields>
+        </GraphTraversal>
+
+        <!-- Active Customer Information resolved via [:RENTED] relationship -->
+        <GraphTraversal pattern="MATCH (c:Customer)-[r:RENTED]->(v:Vehicle {vin: $vin})">
+          <Fields>
+            <Field name="activeCustomerName" sourceProperty="c.name" type="string" description="Name of customer currently operating vehicle" />
+            <Field name="customerRiskScore" sourceProperty="c.riskScore" type="number" description="Customer safety credit score" />
+          </Fields>
+        </GraphTraversal>
+      </Source>
+
+      <!-- [C] Cross-Database Join Strategy -->
+      <JoinStrategy type="EQUIVALENCE">
+        <Key left="mongodb.vin" right="neo4j.vin" description="Equi-join matching MongoDB document VIN with Neo4j Vehicle node VIN" />
+      </JoinStrategy>
+    </Entity>
+
+    <!-- Secondary Entity: Hub Inventory & Network -->
+    <Entity name="Hub" primaryJoinKey="id">
+      <Description>Station transportation hub integrating Neo4j network topology with MongoDB vehicle fleet aggregates</Description>
+      <Source database="neo4j_graphstore" entity="Hub">
+        <Fields>
+          <Field name="id" isKey="true" type="string" />
+          <Field name="name" type="string" />
+          <Field name="city" type="string" />
+          <Field name="latitude" type="number" />
+          <Field name="longitude" type="number" />
+          <Field name="capacity" type="number" />
+          <Field name="type" type="string" />
+        </Fields>
+      </Source>
+      <Source database="mongodb_docstore" collection="vehicles">
+        <Aggregation pipeline="MATCH vehicles WHERE currentHubId = Hub.id">
+          <Fields>
+            <Field name="availableVehicleCount" type="number" description="Live count of available vehicles from MongoDB" />
+            <Field name="averageBatteryPct" type="number" description="Aggregated EV battery charge from MongoDB" />
+          </Fields>
+        </Aggregation>
+      </Source>
+      <JoinStrategy type="EQUIVALENCE">
+        <Key left="neo4j.id" right="mongodb.currentHubId" />
+      </JoinStrategy>
+    </Entity>
+
+    <!-- Tertiary Entity: Rental Journey -->
+    <Entity name="Rental" primaryJoinKey="rentalId">
+      <Description>Rental contract integrating MongoDB financial billing with Neo4j graph route pathfinding</Description>
+      <Source database="mongodb_docstore" collection="rentals">
+        <Fields>
+          <Field name="rentalId" isKey="true" type="string" />
+          <Field name="customerId" type="string" />
+          <Field name="customerName" type="string" />
+          <Field name="vehicleVin" type="string" />
+          <Field name="vehicleModel" type="string" />
+          <Field name="originHubId" type="string" />
+          <Field name="destinationHubId" type="string" />
+          <Field name="startDate" type="date" />
+          <Field name="expectedEndDate" type="date" />
+          <Field name="status" type="string" />
+          <Field name="dailyRate" type="number" />
+          <Field name="estimatedCost" type="number" />
+          <Field name="insuranceTier" type="string" />
+        </Fields>
+      </Source>
+      <Source database="neo4j_graphstore" entity="Rental">
+        <GraphTraversal pattern="MATCH (c:Customer {id: $customerId})-[r:RENTED {rentalId: $rentalId}]->(v:Vehicle)">
+          <Fields>
+            <Field name="customerRiskScore" sourceProperty="c.riskScore" type="number" />
+          </Fields>
+        </GraphTraversal>
+      </Source>
+      <JoinStrategy type="EQUIVALENCE">
+        <Key left="mongodb.rentalId" right="neo4j.rentalId" />
+      </JoinStrategy>
+    </Entity>
+
+  </Entities>
+</DataIntegrationMapping>

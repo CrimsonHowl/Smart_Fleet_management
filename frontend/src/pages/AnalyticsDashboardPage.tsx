@@ -327,7 +327,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {(analytics?.anomalies || []).map((a) => (
+          {(analytics?.anomalies || []).map((a: any) => (
             <div
               key={a._id}
               style={{

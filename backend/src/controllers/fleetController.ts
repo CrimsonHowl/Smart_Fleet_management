@@ -1,57 +1,54 @@
 import { Request, Response } from 'express';
 import { VehicleModel } from '../models/Vehicle';
-import { TelemetryModel } from '../models/Telemetry';
-import { neo4jGraphService } from '../services/neo4jGraphService';
+import { dataIntegrationMediator } from '../services/dataIntegrationMediator';
 
+/**
+ * Fetch all vehicles using XML-governed Data Integration.
+ * A single call triggers the mediator to consult data-sources-mapping.xml,
+ * query MongoDB (IoT sensors, specs) and Neo4j (Hub network, active customers),
+ * and join them on key 'vin'.
+ */
 export async function getVehicles(req: Request, res: Response) {
   try {
-    const { status, type, hubId } = req.query;
-    const filter: Record<string, any> = {};
-
-    if (status) filter.status = status;
-    if (type) filter.type = type;
-    if (hubId) filter.currentHubId = hubId;
-
-    const vehicles = await VehicleModel.find(filter).sort({ status: 1, make: 1 });
-    return res.json({ success: true, count: vehicles.length, data: vehicles });
+    const vehicles = await dataIntegrationMediator.getIntegratedVehicles(req.query);
+    return res.json({
+      success: true,
+      count: vehicles.length,
+      integratedVia: 'data-sources-mapping.xml',
+      data: vehicles,
+    });
   } catch (err: any) {
-    console.error('getVehicles error:', err);
+    console.error('[fleetController] getVehicles error:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
 }
 
+/**
+ * Fetch a single vehicle's integrated profile by VIN using the XML mediator.
+ */
 export async function getVehicleByVin(req: Request, res: Response) {
   try {
     const { vin } = req.params;
-    const vehicle = await VehicleModel.findOne({ vin });
+    const result = await dataIntegrationMediator.getIntegratedVehicleByVin(vin);
 
-    if (!vehicle) {
+    if (!result || !result.vehicle) {
       return res.status(404).json({ success: false, error: 'Vehicle not found' });
     }
 
-    // Fetch recent 50 telemetry points from MongoDB
-    const recentTelemetry = await TelemetryModel.find({ vin })
-      .sort({ timestamp: -1 })
-      .limit(50);
-
-    // Fetch Hub details from Neo4j
-    const hubs = await neo4jGraphService.getAllHubs();
-    const currentHub = hubs.find((h) => h.id === vehicle.currentHubId) || null;
-
     return res.json({
       success: true,
-      data: {
-        vehicle,
-        currentHub,
-        telemetryHistory: recentTelemetry.reverse(),
-      },
+      integratedVia: 'data-sources-mapping.xml',
+      data: result,
     });
   } catch (err: any) {
-    console.error('getVehicleByVin error:', err);
+    console.error('[fleetController] getVehicleByVin error:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
 }
 
+/**
+ * Spatial query: Find vehicles within geospatial radius of given coordinates
+ */
 export async function findNearbyVehicles(req: Request, res: Response) {
   try {
     const lng = parseFloat(req.query.lng as string);
@@ -80,7 +77,32 @@ export async function findNearbyVehicles(req: Request, res: Response) {
       data: nearbyVehicles,
     });
   } catch (err: any) {
-    console.error('findNearbyVehicles error:', err);
+    console.error('[fleetController] findNearbyVehicles error:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
+}
+
+/**
+ * Return the raw XML Data Integration Schema mapping file.
+ * Allows examiners, clients, or evaluators to inspect which data comes from MongoDB and which from Neo4j.
+ */
+export function getIntegrationSchema(req: Request, res: Response) {
+  const format = req.query.format;
+  if (format === 'json') {
+    return res.json({
+      success: true,
+      schema: dataIntegrationMediator.getIntegrationMetadata(),
+    });
+  }
+
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  return res.send(dataIntegrationMediator.getMappingXml());
+}
+
+/**
+ * Return the formal XSD validation schema for data-sources-mapping.xml.
+ */
+export function getIntegrationXsd(req: Request, res: Response) {
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  return res.send(dataIntegrationMediator.getMappingXsd());
 }

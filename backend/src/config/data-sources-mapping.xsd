@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!-- Root Element: DataIntegrationMapping -->
+  <xs:element name="DataIntegrationMapping">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="DataSources" type="DataSourcesType" />
+        <xs:element name="Entities" type="EntitiesType" />
+      </xs:sequence>
+      <xs:attribute name="system" type="xs:string" use="required" />
+      <xs:attribute name="version" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- DataSources Type -->
+  <xs:complexType name="DataSourcesType">
+    <xs:sequence>
+      <xs:element name="DataSource" type="DataSourceType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- DataSource Definition -->
+  <xs:complexType name="DataSourceType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0" />
+      <xs:element name="Collections" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Collection" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:attribute name="name" type="xs:string" use="required" />
+                <xs:attribute name="primaryKey" type="xs:string" />
+                <xs:attribute name="foreignKey" type="xs:string" />
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="GraphEntities" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="NodeLabels" type="xs:string" />
+            <xs:element name="Relationships" type="xs:string" minOccurs="0" />
+            <xs:element name="RelationshipTypes" type="xs:string" minOccurs="0" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required" />
+    <xs:attribute name="type" type="xs:string" use="required" />
+    <xs:attribute name="engine" type="xs:string" use="required" />
+    <xs:attribute name="version" type="xs:string" />
+  </xs:complexType>
+
+  <!-- Entities Container -->
+  <xs:complexType name="EntitiesType">
+    <xs:sequence>
+      <xs:element name="Entity" type="EntityType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Entity Definition -->
+  <xs:complexType name="EntityType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0" />
+      <xs:element name="Source" type="EntitySourceType" maxOccurs="unbounded" />
+      <xs:element name="JoinStrategy" type="JoinStrategyType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required" />
+    <xs:attribute name="primaryJoinKey" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <!-- Entity Source Definition (Document or Graph) -->
+  <xs:complexType name="EntitySourceType">
+    <xs:sequence>
+      <xs:element name="Fields" type="FieldsType" minOccurs="0" />
+      <xs:element name="GraphTraversal" type="GraphTraversalType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="Aggregation" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Fields" type="FieldsType" />
+          </xs:sequence>
+          <xs:attribute name="pipeline" type="xs:string" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="database" type="xs:string" use="required" />
+    <xs:attribute name="collection" type="xs:string" />
+    <xs:attribute name="entity" type="xs:string" />
+  </xs:complexType>
+
+  <!-- Fields Container -->
+  <xs:complexType name="FieldsType">
+    <xs:sequence>
+      <xs:element name="Field" type="FieldType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Individual Field Definition -->
+  <xs:complexType name="FieldType">
+    <xs:attribute name="name" type="xs:string" use="required" />
+    <xs:attribute name="type" type="xs:string" use="required" />
+    <xs:attribute name="isKey" type="xs:boolean" default="false" />
+    <xs:attribute name="sourceProperty" type="xs:string" />
+    <xs:attribute name="unit" type="xs:string" />
+    <xs:attribute name="currency" type="xs:string" />
+    <xs:attribute name="description" type="xs:string" />
+  </xs:complexType>
+
+  <!-- Graph Traversal Definition -->
+  <xs:complexType name="GraphTraversalType">
+    <xs:sequence>
+      <xs:element name="Fields" type="FieldsType" />
+    </xs:sequence>
+    <xs:attribute name="pattern" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <!-- Join Strategy Definition -->
+  <xs:complexType name="JoinStrategyType">
+    <xs:sequence>
+      <xs:element name="Key">
+        <xs:complexType>
+          <xs:attribute name="left" type="xs:string" use="required" />
+          <xs:attribute name="right" type="xs:string" use="required" />
+          <xs:attribute name="description" type="xs:string" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="type" type="xs:string" use="required" />
+  </xs:complexType>
+
+</xs:schema>
