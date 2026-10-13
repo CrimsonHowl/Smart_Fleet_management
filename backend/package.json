@@ -4,15 +4,18 @@
   "description": "Smart Fleet & Rental Tracking System Backend (MongoDB + Neo4j)",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs = require('fs'); fs.mkdirSync('dist/config', { recursive: true }); fs.copyFileSync('src/config/data-sources-mapping.xml', 'dist/config/data-sources-mapping.xml'); fs.copyFileSync('src/config/data-sources-mapping.xsd', 'dist/config/data-sources-mapping.xsd');\"",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "seed": "ts-node-dev --transpile-only src/seed/seedData.ts"
+    "seed": "ts-node-dev --transpile-only src/seed/seedData.ts",
+    "test:xml": "ts-node-dev --transpile-only src/test/verifyXmlIntegration.ts",
+    "test:e2e": "ts-node-dev --transpile-only src/test/testDataIntegrationE2E.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "fast-xml-parser": "^5.11.2",
     "mongoose": "^8.7.0",
     "morgan": "^1.10.0",
     "neo4j-driver": "^5.25.0",

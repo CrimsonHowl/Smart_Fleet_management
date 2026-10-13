@@ -80,150 +80,11 @@ Rather than forcing an all-in-one database model, SmartFleet implements **Polygl
 
 | Operational Domain | Database Engine | Data Model & Technical Rationale |
 | :--- | :--- | :--- |
-| **High-Frequency IoT Telemetry** | **MongoDB** (v7.0) | Time-series document stream capturing live GPS `Point` coordinates, speed, battery %, and engine temp. Utilizes `2dsphere` geospatial indexing for proximity queries and geofence boundary audits. |
-| **Rental Contracts & Billing** | **MongoDB** (v7.0) | Flexible schema storing rental contracts, insurance tiers (`BASIC`, `PREMIUM`, `ENTERPRISE`), tariff calculation, and customer contact specs. |
-| **National Road Network & Routing** | **Neo4j** (v5.26) | Connected graph `(:Hub)-[:CONNECTED_TO {distanceKm, durationMinutes, tollFee}]->(:Hub)`. Uses Cypher `shortestPath` algorithms for optimal multi-hub routing. |
-| **Fleet Allocations & Occupancy** | **Neo4j** (v5.26) | Real-time vehicle station residency `(:Vehicle)-[:CURRENTLY_AT]->(:Hub)`. Calculates surplus and deficit inventory across the station network. |
-| **Customer Lineage & Relationships** | **Neo4j** (v5.26) | Graph relationships `(:Customer)-[:RENTED]->(:Vehicle)` enabling dual-write sync and customer travel lineage analysis. |
-
----
-
-## 📊 System Architecture Diagram
-
-```mermaid
-flowchart TD
-    subgraph Client ["Frontend Architecture (React 19 + TypeScript + Vite)"]
-        UI[Royal Dark Mode Dashboard]
-        Map[OSM India Live Map / Leaflet]
-        Graph[Neo4j SVG Force-Directed Canvas]
-        Drawer[Telemetry & Diagnostics Drawer]
-        Analytics[Recharts Aggregation Dashboard]
-    end
-
-    subgraph API ["Backend Engine (Node.js + Express + TypeScript)"]
-        Router[REST API Router]
-        SimEngine[Live IoT Simulation Engine]
-        RouteService[Neo4j Graph Pathfinding Service]
-        MongoService[MongoDB Telemetry & Aggregation Service]
-    end
-
-    subgraph Storage ["Polyglot Storage Layer"]
-        subgraph MongoCluster ["MongoDB Document Store"]
-            VehiclesDoc[(Vehicles Collection)]
-            TelemetryDoc[(IoT Telemetry Time-Series)]
-            RentalsDoc[(Rental Contracts)]
-        end
-        subgraph Neo4jCluster ["Neo4j Graph Database"]
-            HubNodes((:Hub Nodes))
-            VehicleNodes((:Vehicle Nodes))
-            CustomerNodes((:Customer Nodes))
-            RoadEdges{[:CONNECTED_TO]}
-            AtEdges{[:CURRENTLY_AT]}
-            RentEdges{[:RENTED]}
-        end
-    end
-
-    UI --> Router
-    Map --> Router
-    Graph --> Router
-    Router --> SimEngine
-    Router --> RouteService
-    Router --> MongoService
-    MongoService --> MongoCluster
-    RouteService --> Neo4jCluster
-    SimEngine -.-> Map
-```
-
----
-
-## 🚀 Key Application Features
-
-### 1. Live OSM India Fleet Map & Real-Time Highway Transit
-- **Centrally Focused Indian Map (`[20.5937, 78.9629]` zoom 5)**: Interconnected stations across Coimbatore, Bengaluru, Mumbai, Delhi, Chennai, Hyderabad, Pune, Kolkata, and Ahmedabad.
-- **Authentic Highway Travel Simulation**:
-  - When a rental is active, the vehicle **actually travels** along the highway trajectory between the origin and destination hubs.
-  - Live GPS coordinates interpolate with natural curvature on every simulation tick (3.5s interval).
-  - Dynamic highway cruising speed (**68–90 km/h**), realistic EV battery drain, and odometer progression.
-  - Active **Highway Route Polylines** are drawn on Leaflet showing the vehicle in transit with real-time percentage completion badges.
-- **Deep Diagnostics Side Drawer**:
-  - High-frequency telemetry sparklines for Speed, Battery %, and Engine Temperature.
-  - **Live Highway Journey Card**: Visualizes progress bar, origin station, destination station, and estimated completion.
-  - Layered with `zIndex: 9999` to ensure smooth overlay above map controls.
-
-### 2. Intelligent Rental Planner & Pathfinding Engine
-- **Neo4j Shortest Path Engine**: Automatically calculates the shortest highway corridor between any two national hubs, displaying cumulative distance (km), travel time, toll expenses, and intermediate waypoints.
-- **Coimbatore Tidel Park & Tech Hub Integration**: Full support for Coimbatore origin and destination routes (e.g. Coimbatore ↔ Bengaluru, Coimbatore ↔ Chennai).
-- **Optimistic State Updates**: Newly booked contracts are instantly pinned to the active contracts view with zero blank-screen delay.
-- **One-Click Vehicle Return**: Interactive vehicle check-in button that marks rentals completed and updates station inventory in real time.
-
-### 3. Interactive Neo4j Knowledge Graph Visualizer
-- **Interactive SVG Force-Directed Canvas**:
-  - Real-time physics engine using normalized velocity vectors, center gravity, and boundary damping (zero `NaN` divergence).
-  - Smooth pan, zoom (0.4x to 2.5x), and canvas drag interactions.
-- **Dynamic Relationship Highlighting on Node Click**:
-  - Clicking any Car, Hub, or Customer node highlights all direct relationships with a **3.5px glowing line** and animated flowing stroke dashes (`strokeDasharray: 6 4`).
-  - Distinct relationship color palette:
-    - 🟢 **Emerald Green (`#22c55e`)**: `[:CURRENTLY_AT]` (Vehicle stationed at Hub).
-    - 🔵 **Cyan Blue (`#38bdf8`)**: `[:RENTED]` (Customer renting Vehicle).
-    - 🟡 **Royal Gold (`#c9a84c`)**: `[:CONNECTED_TO]` (Hub-to-Hub highway road).
-  - **Floating Cypher Edge Badges**: Displays `:RENTED`, `:CURRENTLY_AT`, or `:CONNECTED_TO` directly over active edges.
-  - **Connected Sub-Graph Focus**: Selected nodes receive glowing double rings, neighbor nodes receive accent borders, and unrelated nodes fade to 20% opacity.
-- **Direct Relationships Inspector**: Interactive sidebar cards let you click to jump directly from vehicle to hub to customer across the graph.
-- **Fleet Rebalancing Engine**: Algorithmic recommendations to reallocate surplus vehicles to deficit hubs along the shortest route.
-
-### 4. Big Data IoT Aggregation Analytics
-- **Fleet Propulsion Composition**: Real-time aggregation of EV vs ICE fleets (Average battery %, fuel %, and odometer readings).
-- **Corridor Rental Revenue**: Total revenue and mileage grouped by vehicle type and highway corridor.
-- **Real-Time IoT Anomaly Stream**: Live feed monitoring harsh braking incidents and geofence boundary exits.
-
----
-
-## 📐 Graph & Document Data Models
-
-### Neo4j Graph Topology
-
-```cypher
-// Hub to Hub Highway Connection
-(:Hub {id: "hub-cbe-central", name: "Coimbatore Tidel Park & Tech Hub", city: "Coimbatore", capacity: 32})
-  -[:CONNECTED_TO {distanceKm: 362, durationMinutes: 340, tollFee: 6.0}]->
-(:Hub {id: "hub-blr-electronic", name: "Bengaluru Electronic City Hub", city: "Bengaluru", capacity: 40})
-
-// Vehicle Stationed at Hub
-(:Vehicle {vin: "TN-38-EV-4410", make: "Tata", model: "Nexon EV Empowered", type: "ELECTRIC"})
-  -[:CURRENTLY_AT]->
-(:Hub {id: "hub-cbe-central"})
-
-// Customer Active Rental
-(:Customer {id: "CUST-801", name: "Devendra Sharma", phone: "+91-98200-11223"})
-  -[:RENTED {rentalId: "RNT-IND-8821", status: "ACTIVE"}]->
-(:Vehicle {vin: "IND-MUM-SUV-1002"})
-```
-
-### MongoDB Document Schema Examples
-
-```json
-// Vehicle IoT State Document
-{
-  "_id": "veh-cbe-001",
-  "vin": "TN-38-EV-4410",
-  "licensePlate": "TN-38-EV-4410",
-  "make": "Tata",
-  "model": "Nexon EV Empowered",
-  "year": 2024,
-  "type": "ELECTRIC",
-  "status": "AVAILABLE",
-  "batteryPct": 96,
-  "dailyRate": 46,
-  "currentHubId": "hub-cbe-central",
-  "currentLocation": {
-    "type": "Point",
-    "coordinates": [76.9558, 11.0168]
-  },
-  "speedKmH": 0,
-  "engineTempC": 35,
-  "lastSeen": "2026-09-23T14:30:00.000Z"
-}
-```
+| **IoT Telemetry Streams & Logs** | **MongoDB** | High-throughput time-series sensor ingestion (GPS `[lng, lat]`, speed, battery %, engine temp, harsh braking, geofencing). `2dsphere` spatial indexing for geofencing and proximity searches. |
+| **Rental Contracts & Billing** | **MongoDB** | Rich document model storing variable rental specs, driver licensing, payment receipts, and insurance tiers with flexible schema evolution. |
+| **Hub Network & Pathfinding** | **Neo4j** | Graph-modeled road network `(:Hub)-[:CONNECTED_TO {distanceKm, durationMinutes, tollFee}]->(:Hub)` utilizing Cypher `shortestPath` algorithms for optimal multi-hub routing. |
+| **Fleet Allocation & Inventory** | **Neo4j** | Real-time vehicle station occupancy `(:Vehicle)-[:CURRENTLY_AT]->(:Hub)` and network rebalancing recommendations to transfer vehicles from surplus to deficit hubs. |
+| **Customer Lineage & Risk Rings** | **Neo4j** | Graph relationships `(:Customer)-[:RENTED]->(:Vehicle)` tracking user rental histories and relationship clusters. |
 
 ---
 
@@ -275,54 +136,47 @@ npm run dev        # Starts Vite dev server on http://localhost:5173 or 5174
 
 ---
 
-## 📡 REST API Specifications
+## 📱 Application Modules & Features
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/health` | Healthcheck verifying MongoDB and Neo4j connection status. |
-| `GET` | `/api/fleet` | List vehicles with optional filters (`status`, `type`, `hubId`). |
-| `GET` | `/api/fleet/:vin` | Single vehicle telemetry history, battery status, and hub. |
-| `GET` | `/api/fleet/nearby` | Geospatial `2dsphere` query for vehicles within radius. |
-| `GET` | `/api/graph/hubs` | Retrieve all national transportation hubs. |
-| `GET` | `/api/graph/network` | Node & edge graph payload for Knowledge Graph Visualizer. |
-| `POST`| `/api/graph/route` | Cypher `shortestPath` query returning distance, duration, and tolls. |
-| `GET` | `/api/graph/inventory`| Real-time hub capacity, occupancy, and deficit/surplus stats. |
-| `GET` | `/api/graph/rebalance`| Algorithmic recommendations for station fleet transfers. |
-| `GET` | `/api/rentals` | List active and historical rental contracts. |
-| `POST`| `/api/rentals` | Dual-write booking: Creates MongoDB contract & Neo4j rental edge. |
-| `POST`| `/api/rentals/:rentalId/complete` | Complete trip, check-in vehicle, and update station occupancy. |
-| `GET` | `/api/telemetry/live` | Current GPS coordinates and telemetry stream for all vehicles. |
-| `POST`| `/api/telemetry/simulate/tick` | Advance real-time vehicle simulation step along highway routes. |
-| `POST`| `/api/telemetry/simulate/start|stop` | Toggle continuous simulation background process. |
-| `GET` | `/api/analytics` | Aggregated analytics: vehicle metrics, revenue, and anomalies. |
+1. **🗺️ Live Fleet Monitor & Map**:
+   - Leaflet interactive map with custom markers for Stations/Hubs and Vehicles.
+   - Real-time vehicle tracking with active moving markers driven by the background IoT Telemetry Simulator.
+   - Filter vehicles by status (*Available*, *On Rent*, *Maintenance*) and type (*Electric*, *SUV*, *Truck*, *Sedan*, *Van*).
+   - Vehicle Diagnostics Drawer showing real-time speed, battery level, engine temperature, and historical telemetry charts (Recharts).
 
----
+2. **🛣️ Rental & Route Planner**:
+   - Origin & Destination Hub Selector.
+   - Real-time **Neo4j Cypher Pathfinding** returning total route distance, duration, bridge tolls, and intermediate waypoints.
+   - Vehicle picker with live rates and battery levels.
+   - Instant dual-write booking (*MongoDB rental document* + *Neo4j customer-vehicle relationship*).
+   - Active rental management with one-click return and automatic station inventory updates.
 
-## 🎨 Design Aesthetics & Typography
+3. **🕸️ Neo4j Knowledge Graph Visualizer**:
+   - Interactive SVG force-directed knowledge graph displaying Hubs, Vehicles, Customers, and Connections.
+   - Pan, zoom, and inspect Cypher properties for any node.
+   - **Hub Inventory & Occupancy Dashboard** (Surplus vs Deficit indicators).
+   - **Fleet Rebalancing Engine** recommending vehicle transfers along shortest paths.
 
-SmartFleet follows a curated **Royal Black & White** enterprise design language:
-- **Brand Title Typography**: [Comfortaa](https://fonts.google.com/specimen/Comfortaa) (`22px`, 700 weight, `-0.02em` tracking) for a futuristic, geometric brand identity.
-- **Body & Data Typography**: [Outfit](https://fonts.google.com/specimen/Outfit) & [Inter](https://fonts.google.com/specimen/Inter) for maximum data readability.
-- **Color Hierarchy**:
-  - `Surface Dark`: Deep obsidian black (`#070707`, `#0c0c0c`, `#141414`).
-  - `Accent Highlights`: Royal Gold (`#c9a84c`), Emerald Green (`#22c55e`), Electric Cyan (`#38bdf8`), and Amber (`#f59e0b`).
-  - `Pills & Active States`: Clean high-contrast white pills (`#ffffff` on `#000000`) for tactile state switching.
+4. **📊 Big Data IoT Analytics**:
+   - MongoDB aggregation pipelines for fleet energy consumption, mileage by vehicle type, and contract revenue.
+   - Real-time IoT anomaly stream logging harsh braking and geofence boundary breaches.
 
 ---
 
-## 🎓 Academic & Industry Relevance
+## 🛠️ API Reference
 
-This project was built to illustrate real-world distributed data engineering patterns:
-1. **Addressing the CAP Theorem with Polyglot Storage**:
-   - **MongoDB** provides partition tolerance and high write throughput for continuous append-only IoT telemetry.
-   - **Neo4j** provides ACID-compliant graph traversal performance without expensive SQL recursive joins (`$O(k^d)$` vs `$O(d)$` path lookup).
-2. **Dual-Write Consistency**:
-   - Demonstrates coordinated two-phase updates across a document store (MongoDB contract storage) and a property graph (Neo4j customer-to-vehicle edge creation).
-3. **Geospatial & Time-Series Convergence**:
-   - Combines spatial coordinates (`2dsphere`) with time-series diagnostic streaming to detect anomalies like harsh braking and geofence boundary violations in near-real-time.
-
----
-
-<p align="center">
-  Crafted with precision for Big Data Analytics & IoT Engineering · 2026
-</p>
+- `GET  /api/health` - Check connection status of MongoDB and Neo4j.
+- `GET  /api/fleet` - List vehicles with optional filters (`status`, `type`, `hubId`).
+- `GET  /api/fleet/:vin` - Detailed vehicle IoT data and historical telemetry.
+- `GET  /api/fleet/nearby?lng=...&lat=...` - MongoDB `2dsphere` geospatial proximity query.
+- `GET  /api/graph/hubs` - List all transportation hubs.
+- `GET  /api/graph/network` - Return graph nodes & edges for visualization.
+- `POST /api/graph/route` - Neo4j Cypher `shortestPath` calculation.
+- `GET  /api/graph/inventory` - Station capacity and occupancy metrics.
+- `GET  /api/graph/rebalance` - Fleet transfer recommendations.
+- `GET  /api/rentals` - List rental contracts.
+- `POST /api/rentals` - Create rental booking (dual-store sync).
+- `POST /api/rentals/:rentalId/complete` - Check-in and return vehicle.
+- `GET  /api/telemetry/live` - Real-time IoT positions for all vehicles.
+- `POST /api/telemetry/simulate/start|stop|tick` - IoT telemetry simulator controls.
+- `GET  /api/analytics` - MongoDB aggregation pipeline metrics.
