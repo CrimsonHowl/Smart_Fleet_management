@@ -14,141 +14,176 @@ interface HubSeed {
   type: string;
 }
 
+// ── 10 Indian Transportation Hubs (Centered on India & Coimbatore) ──────────
 const HUBS: HubSeed[] = [
   {
-    id: 'hub-sf-dntn',
-    name: 'Downtown Financial Hub',
-    city: 'San Francisco',
-    lat: 37.7897,
-    lng: -122.4014,
-    capacity: 25,
+    id: 'hub-cbe-central',
+    name: 'Coimbatore Tidel Park & Tech Hub',
+    city: 'Coimbatore',
+    lat: 11.0168,
+    lng: 76.9558,
+    capacity: 32,
     type: 'CENTRAL',
   },
   {
-    id: 'hub-sfo-apt',
-    name: 'SFO Airport Terminal',
-    city: 'San Francisco',
-    lat: 37.6213,
-    lng: -122.3790,
-    capacity: 40,
-    type: 'AIRPORT',
-  },
-  {
-    id: 'hub-oak-dntn',
-    name: 'Oakland Metro Depot',
-    city: 'Oakland',
-    lat: 37.8044,
-    lng: -122.2712,
-    capacity: 20,
-    type: 'CENTRAL',
-  },
-  {
-    id: 'hub-palo-alto',
-    name: 'Silicon Valley Hub',
-    city: 'Palo Alto',
-    lat: 37.4419,
-    lng: -122.1430,
-    capacity: 25,
-    type: 'SUBURB',
-  },
-  {
-    id: 'hub-sjc-apt',
-    name: 'San Jose Airport Hub',
-    city: 'San Jose',
-    lat: 37.3639,
-    lng: -121.9289,
+    id: 'hub-mum-central',
+    name: 'Mumbai Central Fleet Depot',
+    city: 'Mumbai',
+    lat: 18.9696,
+    lng: 72.8194,
     capacity: 35,
+    type: 'CENTRAL',
+  },
+  {
+    id: 'hub-mum-bkc',
+    name: 'Bandra Kurla Complex Hub',
+    city: 'Mumbai',
+    lat: 19.0657,
+    lng: 72.8687,
+    capacity: 30,
+    type: 'SUBURB',
+  },
+  {
+    id: 'hub-pune-depot',
+    name: 'Pune Expressway Terminal',
+    city: 'Pune',
+    lat: 18.5204,
+    lng: 73.8567,
+    capacity: 25,
+    type: 'CENTRAL',
+  },
+  {
+    id: 'hub-blr-electronic',
+    name: 'Bengaluru Electronic City Hub',
+    city: 'Bengaluru',
+    lat: 12.8452,
+    lng: 77.6602,
+    capacity: 40,
+    type: 'CENTRAL',
+  },
+  {
+    id: 'hub-blr-airport',
+    name: "Kempegowda Int'l Airport Hub",
+    city: 'Bengaluru',
+    lat: 13.1986,
+    lng: 77.7066,
+    capacity: 50,
     type: 'AIRPORT',
   },
   {
-    id: 'hub-berkeley',
-    name: 'East Bay Tech Station',
-    city: 'Berkeley',
-    lat: 37.8715,
-    lng: -122.2730,
-    capacity: 18,
+    id: 'hub-del-connaught',
+    name: 'Delhi Connaught Place Hub',
+    city: 'New Delhi',
+    lat: 28.6315,
+    lng: 77.2167,
+    capacity: 35,
+    type: 'CENTRAL',
+  },
+  {
+    id: 'hub-del-igi',
+    name: 'IGI Airport Terminal 3 Hub',
+    city: 'New Delhi',
+    lat: 28.5562,
+    lng: 77.1000,
+    capacity: 45,
+    type: 'AIRPORT',
+  },
+  {
+    id: 'hub-hyd-hitech',
+    name: 'Hyderabad HITEC City Station',
+    city: 'Hyderabad',
+    lat: 17.4474,
+    lng: 78.3762,
+    capacity: 30,
     type: 'SUBURB',
   },
   {
-    id: 'hub-fremont',
-    name: 'South Bay Logistics Park',
-    city: 'Fremont',
-    lat: 37.5485,
-    lng: -121.9886,
-    capacity: 22,
+    id: 'hub-chn-port',
+    name: 'Chennai Port Logistics Depot',
+    city: 'Chennai',
+    lat: 13.0827,
+    lng: 80.2707,
+    capacity: 28,
     type: 'PORT',
-  },
-  {
-    id: 'hub-marin',
-    name: 'North Bay Gateway',
-    city: 'San Rafael',
-    lat: 37.9735,
-    lng: -122.5311,
-    capacity: 15,
-    type: 'SUBURB',
   },
 ];
 
-// Connected bidirectional road network
+// Connected bidirectional Indian Highway Network (Neo4j Graph)
 const CONNECTIONS = [
-  { from: 'hub-sf-dntn', to: 'hub-sfo-apt', distanceKm: 21.5, durationMinutes: 25, tollFee: 0 },
-  { from: 'hub-sf-dntn', to: 'hub-oak-dntn', distanceKm: 14.8, durationMinutes: 22, tollFee: 7.0 }, // Bay Bridge
-  { from: 'hub-sf-dntn', to: 'hub-marin', distanceKm: 28.3, durationMinutes: 32, tollFee: 9.0 }, // Golden Gate
-  { from: 'hub-sfo-apt', to: 'hub-palo-alto', distanceKm: 27.2, durationMinutes: 28, tollFee: 0 },
-  { from: 'hub-palo-alto', to: 'hub-sjc-apt', distanceKm: 24.1, durationMinutes: 24, tollFee: 0 },
-  { from: 'hub-palo-alto', to: 'hub-fremont', distanceKm: 22.8, durationMinutes: 26, tollFee: 7.0 }, // Dumbarton Bridge
-  { from: 'hub-oak-dntn', to: 'hub-berkeley', distanceKm: 8.5, durationMinutes: 14, tollFee: 0 },
-  { from: 'hub-oak-dntn', to: 'hub-fremont', distanceKm: 39.4, durationMinutes: 38, tollFee: 0 },
-  { from: 'hub-fremont', to: 'hub-sjc-apt', distanceKm: 19.3, durationMinutes: 20, tollFee: 0 },
-  { from: 'hub-marin', to: 'hub-berkeley', distanceKm: 29.1, durationMinutes: 30, tollFee: 7.0 }, // Richmond Bridge
+  { from: 'hub-cbe-central', to: 'hub-blr-electronic', distanceKm: 362.0, durationMinutes: 340, tollFee: 6.0 }, // NH544 / NH44
+  { from: 'hub-cbe-central', to: 'hub-chn-port', distanceKm: 505.0, durationMinutes: 460, tollFee: 9.5 }, // NH544 / NH48
+  { from: 'hub-mum-central', to: 'hub-mum-bkc', distanceKm: 14.5, durationMinutes: 28, tollFee: 0 },
+  { from: 'hub-mum-bkc', to: 'hub-pune-depot', distanceKm: 148.0, durationMinutes: 130, tollFee: 5.5 }, // Mumbai-Pune Expressway
+  { from: 'hub-mum-central', to: 'hub-pune-depot', distanceKm: 152.0, durationMinutes: 140, tollFee: 5.5 },
+  { from: 'hub-blr-electronic', to: 'hub-blr-airport', distanceKm: 52.0, durationMinutes: 58, tollFee: 2.0 },
+  { from: 'hub-blr-electronic', to: 'hub-chn-port', distanceKm: 345.0, durationMinutes: 330, tollFee: 7.2 },
+  { from: 'hub-blr-airport', to: 'hub-hyd-hitech', distanceKm: 540.0, durationMinutes: 470, tollFee: 11.5 },
+  { from: 'hub-del-connaught', to: 'hub-del-igi', distanceKm: 16.2, durationMinutes: 30, tollFee: 0 },
+  { from: 'hub-mum-bkc', to: 'hub-hyd-hitech', distanceKm: 710.0, durationMinutes: 620, tollFee: 14.0 },
 ];
 
 const VEHICLES_SEED = [
-  { vin: '1FTFW1ED8NFA00001', plate: '7XYZ101', make: 'Ford', model: 'F-150 Lightning', year: 2024, type: 'TRUCK', rate: 120, hub: 'hub-sf-dntn', status: 'AVAILABLE', batt: 92, fuel: 100 },
-  { vin: '5YJ3E1EB8NF100002', plate: '8ABC202', make: 'Tesla', model: 'Model 3 Long Range', year: 2024, type: 'ELECTRIC', rate: 95, hub: 'hub-sf-dntn', status: 'ON_RENT', batt: 68, fuel: 100 },
-  { vin: '5YJYGDEE7NF200003', plate: '9DEF303', make: 'Tesla', model: 'Model Y Performance', year: 2023, type: 'ELECTRIC', rate: 110, hub: 'hub-sfo-apt', status: 'AVAILABLE', batt: 85, fuel: 100 },
-  { vin: 'WA1VAAF18KD300004', plate: '4GHI404', make: 'Audi', model: 'A4 Quattro', year: 2023, type: 'SEDAN', rate: 85, hub: 'hub-sfo-apt', status: 'AVAILABLE', batt: 100, fuel: 78 },
-  { vin: 'JT3HP10U8R0400005', plate: '5JKL505', make: 'Toyota', model: 'RAV4 Hybrid', year: 2024, type: 'SUV', rate: 75, hub: 'hub-sfo-apt', status: 'ON_RENT', batt: 90, fuel: 62 },
-  { vin: '1C4HJXDG9MW500006', plate: '6MNO606', make: 'BMW', model: 'X5 xDrive40i', year: 2023, type: 'SUV', rate: 135, hub: 'hub-palo-alto', status: 'AVAILABLE', batt: 100, fuel: 90 },
-  { vin: '5YJSA1E28MF600007', plate: '2PQR707', make: 'Tesla', model: 'Model S Plaid', year: 2023, type: 'ELECTRIC', rate: 160, hub: 'hub-palo-alto', status: 'AVAILABLE', batt: 95, fuel: 100 },
-  { vin: 'WD4PF4CC4MT700008', plate: '3STU808', make: 'Mercedes-Benz', model: 'Sprinter Cargo', year: 2022, type: 'VAN', rate: 115, hub: 'hub-oak-dntn', status: 'AVAILABLE', batt: 100, fuel: 84 },
-  { vin: '1FTNE3Y89KD800009', plate: '1VWX909', make: 'Ford', model: 'Transit 250 Van', year: 2023, type: 'VAN', rate: 105, hub: 'hub-oak-dntn', status: 'MAINTENANCE', batt: 100, fuel: 40 },
-  { vin: '7PDSGABA4PP900010', plate: '8YZA010', make: 'Rivian', model: 'R1T Adventure', year: 2024, type: 'TRUCK', rate: 145, hub: 'hub-sjc-apt', status: 'AVAILABLE', batt: 88, fuel: 100 },
-  { vin: '1G1FX6S05M4000011', plate: '7BCD111', make: 'Chevrolet', model: 'Bolt EUV', year: 2023, type: 'ELECTRIC', rate: 65, hub: 'hub-sjc-apt', status: 'ON_RENT', batt: 44, fuel: 100 },
-  { vin: '4S4WTAED8N3000012', plate: '9EFG212', make: 'Subaru', model: 'Outback XT', year: 2023, type: 'SUV', rate: 80, hub: 'hub-berkeley', status: 'AVAILABLE', batt: 100, fuel: 89 },
-  { vin: '2C3CDXHG7PH000013', plate: '3HIJ313', make: 'Toyota', model: 'Camry XSE', year: 2024, type: 'SEDAN', rate: 70, hub: 'hub-berkeley', status: 'AVAILABLE', batt: 100, fuel: 95 },
-  { vin: '1FM5K8GC8MGA00014', plate: '5KLM414', make: 'Ford', model: 'Explorer Limited', year: 2023, type: 'SUV', rate: 90, hub: 'hub-fremont', status: 'AVAILABLE', batt: 100, fuel: 72 },
-  { vin: '5YJ3E1EB3LF000015', plate: '6NOP515', make: 'Tesla', model: 'Model 3 Standard', year: 2022, type: 'ELECTRIC', rate: 85, hub: 'hub-fremont', status: 'AVAILABLE', batt: 80, fuel: 100 },
-  { vin: 'WP0AA2A15MSA00016', plate: '4QRS616', make: 'Porsche', model: 'Taycan 4S', year: 2023, type: 'ELECTRIC', rate: 210, hub: 'hub-marin', status: 'AVAILABLE', batt: 91, fuel: 100 },
-  { vin: 'JTDKARFP8N3000017', plate: '2TUV717', make: 'Toyota', model: 'Prius Prime', year: 2024, type: 'SEDAN', rate: 68, hub: 'hub-marin', status: 'AVAILABLE', batt: 96, fuel: 98 },
-  { vin: '1FTFW1E84KFA00018', plate: '1WXY818', make: 'Ford', model: 'F-150 SuperCrew', year: 2022, type: 'TRUCK', rate: 110, hub: 'hub-sf-dntn', status: 'AVAILABLE', batt: 100, fuel: 65 },
+  // Coimbatore Fleet
+  { vin: 'IND-CBE-EV-7001', plate: 'TN-38-EV-4410', make: 'Tata', model: 'Nexon EV Empowered', year: 2024, type: 'ELECTRIC' as const, rate: 46, hub: 'hub-cbe-central', status: 'AVAILABLE' as const, batt: 96, fuel: 100 },
+  { vin: 'IND-CBE-SUV-7002', plate: 'TN-38-BZ-8822', make: 'Mahindra', model: 'XUV700 AX7L', year: 2024, type: 'SUV' as const, rate: 58, hub: 'hub-cbe-central', status: 'ON_RENT' as const, batt: 100, fuel: 82 },
+  { vin: 'IND-CBE-SED-7003', plate: 'TN-38-AJ-1020', make: 'Honda', model: 'City e:HEV Hybrid', year: 2023, type: 'SEDAN' as const, rate: 42, hub: 'hub-cbe-central', status: 'AVAILABLE' as const, batt: 100, fuel: 90 },
+
+  // Bengaluru Fleet
+  { vin: 'IND-BLR-EV-7004', plate: 'KA-01-EV-2024', make: 'Mahindra', model: 'XUV400 Pro', year: 2024, type: 'ELECTRIC' as const, rate: 48, hub: 'hub-blr-electronic', status: 'AVAILABLE' as const, batt: 88, fuel: 100 },
+  { vin: 'IND-BLR-EV-7005', plate: 'KA-05-EV-1102', make: 'Tata', model: 'Tiago EV Tech Lux', year: 2024, type: 'ELECTRIC' as const, rate: 36, hub: 'hub-blr-electronic', status: 'ON_RENT' as const, batt: 62, fuel: 100 },
+  { vin: 'IND-BLR-VAN-7006', plate: 'KA-51-TR-9081', make: 'Force', model: 'Urbania Luxury Van', year: 2023, type: 'VAN' as const, rate: 85, hub: 'hub-blr-airport', status: 'AVAILABLE' as const, batt: 100, fuel: 74 },
+  { vin: 'IND-BLR-SUV-7007', plate: 'KA-03-MY-4421', make: 'Toyota', model: 'Innova Hycross ZX', year: 2024, type: 'SUV' as const, rate: 65, hub: 'hub-blr-airport', status: 'AVAILABLE' as const, batt: 100, fuel: 80 },
+
+  // Mumbai Fleet
+  { vin: 'IND-MUM-EV-7008', plate: 'MH-01-EV-9021', make: 'Tata', model: 'Nexon EV Long Range', year: 2024, type: 'ELECTRIC' as const, rate: 50, hub: 'hub-mum-central', status: 'AVAILABLE' as const, batt: 92, fuel: 100 },
+  { vin: 'IND-MUM-SUV-7009', plate: 'MH-02-DN-4401', make: 'Mahindra', model: 'Scorpio-N 4xplor', year: 2024, type: 'SUV' as const, rate: 54, hub: 'hub-mum-central', status: 'ON_RENT' as const, batt: 100, fuel: 68 },
+  { vin: 'IND-MUM-SED-7010', plate: 'MH-03-BT-7711', make: 'Hyundai', model: 'Verna Turbo SX', year: 2023, type: 'SEDAN' as const, rate: 44, hub: 'hub-mum-bkc', status: 'AVAILABLE' as const, batt: 100, fuel: 86 },
+
+  // Pune Fleet
+  { vin: 'IND-PUN-EV-7011', plate: 'MH-12-EV-5544', make: 'MG', model: 'ZS EV Exclusive', year: 2024, type: 'ELECTRIC' as const, rate: 52, hub: 'hub-pune-depot', status: 'AVAILABLE' as const, batt: 79, fuel: 100 },
+  { vin: 'IND-PUN-TRK-7012', plate: 'MH-14-GH-3309', make: 'Isuzu', model: 'D-Max V-Cross 4x4', year: 2023, type: 'TRUCK' as const, rate: 70, hub: 'hub-pune-depot', status: 'AVAILABLE' as const, batt: 100, fuel: 65 },
+
+  // Delhi Fleet
+  { vin: 'IND-DEL-EV-7013', plate: 'DL-01-EV-8080', make: 'Hyundai', model: 'Ioniq 5 RWD', year: 2024, type: 'ELECTRIC' as const, rate: 95, hub: 'hub-del-connaught', status: 'AVAILABLE' as const, batt: 94, fuel: 100 },
+  { vin: 'IND-DEL-SUV-7014', plate: 'DL-03-CY-2211', make: 'Tata', model: 'Safari Dark Edition', year: 2024, type: 'SUV' as const, rate: 62, hub: 'hub-del-igi', status: 'ON_RENT' as const, batt: 100, fuel: 71 },
+
+  // Hyderabad Fleet
+  { vin: 'IND-HYD-EV-7015', plate: 'TS-09-EV-3301', make: 'BYD', model: 'Atto 3 Superior', year: 2024, type: 'ELECTRIC' as const, rate: 68, hub: 'hub-hyd-hitech', status: 'AVAILABLE' as const, batt: 87, fuel: 100 },
+  { vin: 'IND-HYD-SED-7016', plate: 'TS-07-EK-6622', make: 'Skoda', model: 'Slavia 1.5 TSI', year: 2023, type: 'SEDAN' as const, rate: 45, hub: 'hub-hyd-hitech', status: 'AVAILABLE' as const, batt: 100, fuel: 92 },
+
+  // Chennai Fleet
+  { vin: 'IND-CHN-EV-7017', plate: 'TN-01-EV-5050', make: 'Tata', model: 'Curvv EV 55', year: 2024, type: 'ELECTRIC' as const, rate: 55, hub: 'hub-chn-port', status: 'AVAILABLE' as const, batt: 85, fuel: 100 },
+  { vin: 'IND-CHN-TRK-7018', plate: 'TN-04-TR-1288', make: 'Tata', model: 'Yodha 2.0 Pickup', year: 2023, type: 'TRUCK' as const, rate: 60, hub: 'hub-chn-port', status: 'MAINTENANCE' as const, batt: 100, fuel: 40 },
 ];
 
 const CUSTOMERS = [
-  { id: 'CUST-001', name: 'Alex Johnson', email: 'alex.j@example.com', phone: '+1-415-555-0101', riskScore: 12 },
-  { id: 'CUST-002', name: 'Elena Rostova', email: 'elena.r@example.com', phone: '+1-415-555-0102', riskScore: 8 },
-  { id: 'CUST-003', name: 'Marcus Chen', email: 'marcus.c@example.com', phone: '+1-510-555-0103', riskScore: 15 },
-  { id: 'CUST-004', name: 'Sarah Miller', email: 'sarah.m@example.com', phone: '+1-408-555-0104', riskScore: 7 },
-  { id: 'CUST-005', name: 'David Kumar', email: 'david.k@example.com', phone: '+1-650-555-0105', riskScore: 22 },
+  { id: 'CUST-IND-801', name: 'Devendra Sharma', email: 'devendra.s@fleet.in', phone: '+91-98200-11223', riskScore: 8 },
+  { id: 'CUST-IND-802', name: 'Priya Sundaram', email: 'priya.s@tech.in', phone: '+91-94432-88102', riskScore: 10 },
+  { id: 'CUST-IND-803', name: 'Rajesh Varma', email: 'rajesh.v@trans.in', phone: '+91-98450-44221', riskScore: 14 },
+  { id: 'CUST-IND-804', name: 'Ananya Deshmukh', email: 'ananya.d@pune.in', phone: '+91-98221-55009', riskScore: 6 },
+  { id: 'CUST-IND-805', name: 'Vikramaditya Rao', email: 'vikram.r@hyd.in', phone: '+91-99890-33441', riskScore: 12 },
 ];
 
 export async function seed() {
-  console.log('--- Starting Smart Fleet Database Seed ---');
+  console.log('========================================================================');
+  console.log('🇮🇳 SEEDING SMARTFLEET INDIAN HIGHWAY & POLYGLOT PERSISTENCE DATA');
+  console.log('========================================================================\n');
 
   await connectMongo();
+  console.log('[MongoDB] Connected to database');
 
   // Clear Mongo collections
   await VehicleModel.deleteMany({});
   await TelemetryModel.deleteMany({});
   await RentalModel.deleteMany({});
-  console.log('[MongoDB] Collections cleared');
+  console.log('[MongoDB] Collections cleared (vehicles, telemetries, rentals)');
 
   // Clear Neo4j
   console.log('[Neo4j] Clearing existing graph...');
   await runCypher('MATCH (n) DETACH DELETE n');
 
   // 1. Seed Hubs in Neo4j
-  console.log('[Neo4j] Seeding Hubs...');
+  console.log('[Neo4j] Seeding 10 Indian Transportation Hubs...');
   for (const h of HUBS) {
     await runCypher(
       `
@@ -166,8 +201,8 @@ export async function seed() {
     );
   }
 
-  // 2. Seed Hub Connections in Neo4j
-  console.log('[Neo4j] Seeding Hub Road Network Connections...');
+  // 2. Seed Hub Highway Connections in Neo4j
+  console.log('[Neo4j] Seeding Connected Interstate Highway Corridors...');
   for (const conn of CONNECTIONS) {
     await runCypher(
       `
@@ -180,7 +215,7 @@ export async function seed() {
   }
 
   // 3. Seed Customers in Neo4j
-  console.log('[Neo4j] Seeding Customers...');
+  console.log('[Neo4j] Seeding Enterprise Customers...');
   for (const c of CUSTOMERS) {
     await runCypher(
       `
@@ -197,14 +232,13 @@ export async function seed() {
   }
 
   // 4. Seed Vehicles in MongoDB and Neo4j
-  console.log('[MongoDB & Neo4j] Seeding Vehicles & Fleet Distribution...');
+  console.log('[MongoDB & Neo4j] Seeding Fleet Vehicles with Dual-Store Linking...');
   const hubMap = new Map(HUBS.map((h) => [h.id, h]));
 
   for (const vData of VEHICLES_SEED) {
     const hub = hubMap.get(vData.hub)!;
-    // Location with slight offset
-    const lng = hub.lng + (Math.random() - 0.5) * 0.005;
-    const lat = hub.lat + (Math.random() - 0.5) * 0.005;
+    const lng = hub.lng + (Math.random() - 0.5) * 0.006;
+    const lat = hub.lat + (Math.random() - 0.5) * 0.006;
 
     const mongoVehicle = await VehicleModel.create({
       vin: vData.vin,
@@ -216,16 +250,16 @@ export async function seed() {
       status: vData.status,
       batteryPct: vData.batt,
       fuelPct: vData.fuel,
-      odometerKm: Math.floor(12000 + Math.random() * 25000),
+      odometerKm: Math.floor(8000 + Math.random() * 20000),
       dailyRate: vData.rate,
       currentHubId: vData.hub,
       currentLocation: {
         type: 'Point',
         coordinates: [lng, lat],
       },
-      speedKmH: vData.status === 'ON_RENT' ? 65 : 0,
-      engineTempC: vData.status === 'ON_RENT' ? 92 : 72,
-      tirePressurePsi: [35, 35, 34, 34],
+      speedKmH: vData.status === 'ON_RENT' ? 72 : 0,
+      engineTempC: vData.status === 'ON_RENT' ? 90 : 70,
+      tirePressurePsi: [34, 34, 34, 34],
       lastSeen: new Date(),
     });
 
@@ -254,19 +288,19 @@ export async function seed() {
       }
     );
 
-    // Initial Telemetry Points for each vehicle
+    // Initial Telemetry Points for each vehicle in MongoDB
     await TelemetryModel.create({
       vin: vData.vin,
       vehicleId: mongoVehicle._id,
       timestamp: new Date(Date.now() - 1000 * 60 * 10),
       location: {
         type: 'Point',
-        coordinates: [lng - 0.01, lat - 0.01],
+        coordinates: [lng - 0.002, lat - 0.002],
       },
-      speedKmH: vData.status === 'ON_RENT' ? 55 : 0,
+      speedKmH: vData.status === 'ON_RENT' ? 68 : 0,
       batteryPct: Math.min(100, vData.batt + 1),
       fuelPct: Math.min(100, vData.fuel + 1),
-      engineTempC: 85,
+      engineTempC: 84,
       harshBraking: false,
       geofenceViolation: false,
     });
@@ -279,73 +313,73 @@ export async function seed() {
         type: 'Point',
         coordinates: [lng, lat],
       },
-      speedKmH: vData.status === 'ON_RENT' ? 65 : 0,
+      speedKmH: vData.status === 'ON_RENT' ? 75 : 0,
       batteryPct: vData.batt,
       fuelPct: vData.fuel,
-      engineTempC: vData.status === 'ON_RENT' ? 92 : 72,
+      engineTempC: vData.status === 'ON_RENT' ? 88 : 70,
       harshBraking: false,
       geofenceViolation: false,
     });
   }
 
   // 5. Seed Active and Completed Rentals
-  console.log('[Dual-Store] Seeding Active & Historical Rentals...');
+  console.log('[Dual-Store] Seeding Active Indian Highway Rentals...');
   const rentalSeedList = [
     {
-      rentalId: 'RNT-2024-001',
-      customerId: 'CUST-001',
-      customerName: 'Alex Johnson',
-      customerPhone: '+1-415-555-0101',
-      vin: '5YJ3E1EB8NF100002',
-      vehicleModel: 'Tesla Model 3 Long Range',
-      originHubId: 'hub-sf-dntn',
-      originHubName: 'Downtown Financial Hub',
-      destHubId: 'hub-sjc-apt',
-      destHubName: 'San Jose Airport Hub',
+      rentalId: 'RNT-IND-8821',
+      customerId: 'CUST-IND-801',
+      customerName: 'Devendra Sharma',
+      customerPhone: '+91-98200-11223',
+      vin: 'IND-CBE-SUV-7002',
+      vehicleModel: 'Mahindra XUV700 AX7L',
+      originHubId: 'hub-cbe-central',
+      originHubName: 'Coimbatore Tidel Park & Tech Hub',
+      destHubId: 'hub-blr-electronic',
+      destHubName: 'Bengaluru Electronic City Hub',
       status: 'ACTIVE' as const,
-      estimatedDistanceKm: 72.8,
-      estimatedDurationMin: 77,
-      routePath: ['Downtown Financial Hub', 'SFO Airport Terminal', 'Silicon Valley Hub', 'San Jose Airport Hub'],
-      dailyRate: 95,
-      estimatedCost: 190,
+      estimatedDistanceKm: 362.0,
+      estimatedDurationMin: 340,
+      routePath: ['Coimbatore Tidel Park & Tech Hub', 'Bengaluru Electronic City Hub'],
+      dailyRate: 58,
+      estimatedCost: 122,
       insuranceTier: 'PREMIUM' as const,
     },
     {
-      rentalId: 'RNT-2024-002',
-      customerId: 'CUST-002',
-      customerName: 'Elena Rostova',
-      customerPhone: '+1-415-555-0102',
-      vin: 'JT3HP10U8R0400005',
-      vehicleModel: 'Toyota RAV4 Hybrid',
-      originHubId: 'hub-sfo-apt',
-      originHubName: 'SFO Airport Terminal',
-      destHubId: 'hub-fremont',
-      destHubName: 'South Bay Logistics Park',
+      rentalId: 'RNT-IND-8822',
+      customerId: 'CUST-IND-802',
+      customerName: 'Priya Sundaram',
+      customerPhone: '+91-94432-88102',
+      vin: 'IND-BLR-EV-7005',
+      vehicleModel: 'Tata Tiago EV Tech Lux',
+      originHubId: 'hub-blr-electronic',
+      originHubName: 'Bengaluru Electronic City Hub',
+      destHubId: 'hub-chn-port',
+      destHubName: 'Chennai Port Logistics Depot',
       status: 'ACTIVE' as const,
-      estimatedDistanceKm: 50.0,
-      estimatedDurationMin: 54,
-      routePath: ['SFO Airport Terminal', 'Silicon Valley Hub', 'South Bay Logistics Park'],
-      dailyRate: 75,
-      estimatedCost: 150,
+      estimatedDistanceKm: 345.0,
+      estimatedDurationMin: 330,
+      routePath: ['Bengaluru Electronic City Hub', 'Chennai Port Logistics Depot'],
+      dailyRate: 36,
+      estimatedCost: 79,
       insuranceTier: 'BASIC' as const,
     },
     {
-      rentalId: 'RNT-2024-003',
-      customerId: 'CUST-003',
-      customerName: 'Marcus Chen',
-      customerPhone: '+1-510-555-0103',
-      vin: '1G1FX6S05M4000011',
-      vehicleModel: 'Chevrolet Bolt EUV',
-      originHubId: 'hub-sjc-apt',
-      originHubName: 'San Jose Airport Hub',
-      destHubId: 'hub-oak-dntn',
-      destHubName: 'Oakland Metro Depot',
+      rentalId: 'RNT-IND-8823',
+      customerId: 'CUST-IND-804',
+      customerName: 'Ananya Deshmukh',
+      customerPhone: '+91-98221-55009',
+      vin: 'IND-MUM-SUV-7009',
+      vehicleModel: 'Mahindra Scorpio-N 4xplor',
+      originHubId: 'hub-mum-central',
+      originHubName: 'Mumbai Central Fleet Depot',
+      destHubId: 'hub-pune-depot',
+      destHubName: 'Pune Expressway Terminal',
       status: 'ACTIVE' as const,
-      estimatedDistanceKm: 58.7,
-      estimatedDurationMin: 58,
-      routePath: ['San Jose Airport Hub', 'South Bay Logistics Park', 'Oakland Metro Depot'],
-      dailyRate: 65,
-      estimatedCost: 130,
+      estimatedDistanceKm: 152.0,
+      estimatedDurationMin: 140,
+      routePath: ['Mumbai Central Fleet Depot', 'Bandra Kurla Complex Hub', 'Pune Expressway Terminal'],
+      dailyRate: 54,
+      estimatedCost: 113,
       insuranceTier: 'BASIC' as const,
     },
   ];
@@ -356,15 +390,15 @@ export async function seed() {
       customerId: r.customerId,
       customerName: r.customerName,
       customerPhone: r.customerPhone,
-      customerRiskScore: 10,
+      customerRiskScore: 8,
       vehicleVin: r.vin,
       vehicleModel: r.vehicleModel,
       originHubId: r.originHubId,
       originHubName: r.originHubName,
       destinationHubId: r.destHubId,
       destinationHubName: r.destHubName,
-      startDate: new Date(Date.now() - 1000 * 60 * 120), // started 2 hours ago
-      expectedEndDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), // 2 days
+      startDate: new Date(Date.now() - 1000 * 60 * 90),
+      expectedEndDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
       status: r.status,
       estimatedDistanceKm: r.estimatedDistanceKm,
       estimatedDurationMin: r.estimatedDurationMin,
@@ -374,7 +408,6 @@ export async function seed() {
       insuranceTier: r.insuranceTier,
     });
 
-    // Update activeRentalId on vehicle in Mongo
     await VehicleModel.updateOne({ vin: r.vin }, { activeRentalId: r.rentalId });
 
     // Link customer-vehicle rental in Neo4j
@@ -395,33 +428,39 @@ export async function seed() {
     );
   }
 
-  // 6. Generate historical telemetry points for the active rented vehicles along their path
-  console.log('[MongoDB] Generating realistic historical telemetry trails...');
+  // 6. Generate historical telemetry trails
+  console.log('[MongoDB] Generating historical telemetry sensor trails for active vehicles...');
   const activeVehicles = await VehicleModel.find({ status: 'ON_RENT' });
   for (const av of activeVehicles) {
     const [cLng, cLat] = av.currentLocation.coordinates;
-    for (let i = 15; i >= 1; i--) {
+    for (let i = 12; i >= 1; i--) {
       await TelemetryModel.create({
         vin: av.vin,
         vehicleId: av._id,
         rentalId: av.activeRentalId,
-        timestamp: new Date(Date.now() - i * 1000 * 60 * 4), // 4 mins apart
+        timestamp: new Date(Date.now() - i * 1000 * 60 * 3),
         location: {
           type: 'Point',
-          coordinates: [cLng - (i * 0.003), cLat - (i * 0.0025)],
+          coordinates: [cLng - i * 0.002, cLat - i * 0.0018],
         },
-        speedKmH: Math.floor(50 + Math.random() * 35),
-        batteryPct: Math.min(100, av.batteryPct + Math.floor(i * 0.5)),
-        fuelPct: Math.min(100, av.fuelPct + Math.floor(i * 0.4)),
-        engineTempC: Math.floor(88 + Math.random() * 5),
-        harshBraking: i === 7, // one harsh brake in history
+        speedKmH: Math.floor(65 + Math.random() * 20),
+        batteryPct: Math.min(100, av.batteryPct + Math.floor(i * 0.4)),
+        fuelPct: Math.min(100, av.fuelPct + Math.floor(i * 0.3)),
+        engineTempC: Math.floor(86 + Math.random() * 5),
+        harshBraking: i === 5,
         geofenceViolation: false,
-        alertType: i === 7 ? 'HARSH_BRAKING_EVENT' : null,
+        alertType: i === 5 ? 'HARSH_BRAKING_EVENT' : null,
       });
     }
   }
 
-  console.log('--- Database Seeding Successfully Completed! ---');
+  console.log('\n========================================================================');
+  console.log('🎉 DATABASE SEEDING COMPLETED SUCCESSFULLY!');
+  console.log('   - 10 Indian Hubs & Interstate Highway Corridors seeded in Neo4j');
+  console.log('   - 18 Fleet Vehicles seeded in MongoDB & Neo4j');
+  console.log('   - Active Rentals & IoT Telemetry seeded in MongoDB & Neo4j');
+  console.log('========================================================================\n');
+
   await disconnectDatabases();
 }
 

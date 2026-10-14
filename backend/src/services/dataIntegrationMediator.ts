@@ -284,21 +284,76 @@ export class DataIntegrationMediator {
   }
 
   /**
+   * Dynamically extracts mapping rules for a specific entity from data-sources-mapping.xml
+   */
+  public getEntityMapping(entityName: string = 'Vehicle') {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+
+    const root = this.parsedMapping?.DataIntegrationMapping || {};
+    const entities = root.Entities?.Entity || [];
+    const entityList = Array.isArray(entities) ? entities : [entities];
+    const entity = entityList.find((e: any) => e['@_name'] === entityName);
+
+    if (!entity) {
+      throw new Error(`Entity "${entityName}" not defined in data-sources-mapping.xml`);
+    }
+
+    const sources = Array.isArray(entity.Source) ? entity.Source : [entity.Source];
+    const mongoSource = sources.find((s: any) => (s['@_database'] || '').includes('mongo'));
+    const neo4jSource = sources.find((s: any) => (s['@_database'] || '').includes('neo4j'));
+
+    const mongoFields = (mongoSource?.Fields?.Field || []).map((f: any) => f['@_name']);
+    const traversals = Array.isArray(neo4jSource?.GraphTraversal)
+      ? neo4jSource.GraphTraversal
+      : neo4jSource?.GraphTraversal
+      ? [neo4jSource.GraphTraversal]
+      : [];
+
+    const neo4jFieldNames: string[] = [];
+    traversals.forEach((t: any) => {
+      const fieldList = Array.isArray(t.Fields?.Field) ? t.Fields.Field : t.Fields?.Field ? [t.Fields.Field] : [];
+      fieldList.forEach((f: any) => neo4jFieldNames.push(f['@_name']));
+    });
+
+    return {
+      entityName,
+      primaryJoinKey: entity['@_primaryJoinKey'] || 'vin',
+      mongoCollection: mongoSource?.['@_collection'] || 'vehicles',
+      mongoFields,
+      neo4jFields: neo4jFieldNames,
+      neo4jTraversals: traversals.map((t: any) => ({
+        pattern: t['@_pattern'],
+        fields: Array.isArray(t.Fields?.Field) ? t.Fields.Field : t.Fields?.Field ? [t.Fields.Field] : [],
+      })),
+      joinKeyLeft: entity.JoinStrategy?.Key?.['@_left']?.split('.')[1] || 'vin',
+      joinKeyRight: entity.JoinStrategy?.Key?.['@_right']?.split('.')[1] || 'vin',
+    };
+  }
+
+  /**
    * Fetch all vehicles using XML-governed data integration.
-   * Dispatches queries to MongoDB and Neo4j, then performs an in-memory Hash Join on 'vin'.
+   * Dynamically reads query patterns and join keys from data-sources-mapping.xml,
+   * dispatches queries to MongoDB and Neo4j, then performs an in-memory Hash Join on 'vin'.
    */
   public async getIntegratedVehicles(filterQuery: Record<string, any> = {}): Promise<IntegratedVehicleRecord[]> {
     if (!this.isInitialized) {
       this.initialize();
     }
 
-    // 1. Build MongoDB filter
+    // 1. DYNAMIC CONSULTATION: Read entity mapping specification directly from the XML rulebook
+    const mapping = this.getEntityMapping('Vehicle');
+    const primaryKey = mapping.primaryJoinKey; // Dynamically 'vin' from XML
+    const joinKey = mapping.joinKeyLeft;      // Dynamically 'vin' from <JoinStrategy>
+
+    // 2. Build MongoDB filter
     const mongoFilter: Record<string, any> = {};
     if (filterQuery.status && filterQuery.status !== 'ALL') mongoFilter.status = filterQuery.status;
     if (filterQuery.type && filterQuery.type !== 'ALL') mongoFilter.type = filterQuery.type;
     if (filterQuery.hubId) mongoFilter.currentHubId = filterQuery.hubId;
 
-    // 2. Fetch Document data from MongoDB (as defined in XML for 'mongodb_docstore')
+    // 3. Fetch Document data from MongoDB collection declared in XML ('vehicles')
     let mongoVehicles: any[] = [];
     if (mongoose.connection.readyState === 1) {
       mongoVehicles = await VehicleModel.find(mongoFilter).sort({ status: 1, make: 1 }).lean();
@@ -312,7 +367,7 @@ export class DataIntegrationMediator {
       });
     }
 
-    // 3. Fetch Graph data from Neo4j (as defined in XML for 'neo4j_graphstore')
+    // 4. Fetch Graph data from Neo4j using patterns extracted dynamically from XML
     const neo4jDataByVin = new Map<string, {
       hub?: { id: string; name: string; city: string; capacity: number; type: string };
       corridors?: any[];
@@ -320,7 +375,13 @@ export class DataIntegrationMediator {
     }>();
 
     try {
-      // Cypher Query 1: Vehicle Hub assignments and Hub properties
+      // Cypher Query 1: Read [:CURRENTLY_AT] pattern dynamically from XML GraphTraversal
+      const hubTraversal = mapping.neo4jTraversals.find((t: any) => t.pattern.includes('CURRENTLY_AT'));
+      const hubPatternBase = hubTraversal
+        ? hubTraversal.pattern.replace('{vin: $vin}', '')
+        : 'MATCH (v:Vehicle) OPTIONAL MATCH (v)-[:CURRENTLY_AT]->(h:Hub)';
+      const hubCypherQuery = `${hubPatternBase} RETURN v.vin AS vin, h.id AS hubId, h.name AS hubName, h.city AS hubCity, h.capacity AS hubCapacity, h.type AS hubType`;
+
       const hubGraphRows = await runCypher<{
         vin: string;
         hubId: string;
@@ -328,12 +389,7 @@ export class DataIntegrationMediator {
         hubCity: string;
         hubCapacity: number;
         hubType: string;
-      }>(`
-        MATCH (v:Vehicle)
-        OPTIONAL MATCH (v)-[:CURRENTLY_AT]->(h:Hub)
-        RETURN v.vin AS vin, h.id AS hubId, h.name AS hubName,
-               h.city AS hubCity, h.capacity AS hubCapacity, h.type AS hubType
-      `);
+      }>(hubCypherQuery);
 
       for (const row of hubGraphRows) {
         if (row.vin) {
@@ -349,15 +405,18 @@ export class DataIntegrationMediator {
         }
       }
 
-      // Cypher Query 2: Active customer rentals
+      // Cypher Query 2: Read [:RENTED] pattern dynamically from XML GraphTraversal
+      const rentalTraversal = mapping.neo4jTraversals.find((t: any) => t.pattern.includes('RENTED'));
+      const rentalPatternBase = rentalTraversal
+        ? rentalTraversal.pattern.replace('{vin: $vin}', '')
+        : 'MATCH (c:Customer)-[:RENTED]->(v:Vehicle)';
+      const rentalCypherQuery = `${rentalPatternBase} RETURN v.vin AS vin, c.name AS customerName, c.riskScore AS riskScore`;
+
       const customerRows = await runCypher<{
         vin: string;
         customerName: string;
         riskScore: number;
-      }>(`
-        MATCH (c:Customer)-[:RENTED]->(v:Vehicle)
-        RETURN v.vin AS vin, c.name AS customerName, c.riskScore AS riskScore
-      `);
+      }>(rentalCypherQuery);
 
       for (const row of customerRows) {
         if (row.vin && neo4jDataByVin.has(row.vin)) {
@@ -372,7 +431,7 @@ export class DataIntegrationMediator {
       // In offline / fallback mode, use baseline graph data
       for (const mv of mongoVehicles) {
         const hub = BASELINE_NEO4J_HUBS[mv.currentHubId];
-        neo4jDataByVin.set(mv.vin, {
+        neo4jDataByVin.set(mv[joinKey], {
           hub,
           corridors: hub?.corridors || [],
           activeCustomer: mv.activeRentalId ? { name: 'Devendra Sharma', riskScore: 10 } : undefined,
@@ -382,7 +441,7 @@ export class DataIntegrationMediator {
 
     // 4. In-Memory Hash Join Reconciliation on primary join key 'vin' (as dictated by XML)
     const integratedRecords: IntegratedVehicleRecord[] = mongoVehicles.map((mv: any) => {
-      const graphInfo = neo4jDataByVin.get(mv.vin);
+      const graphInfo = neo4jDataByVin.get(mv[joinKey]);
 
       return {
         // Shared identity
@@ -418,25 +477,9 @@ export class DataIntegrationMediator {
         // Explicit provenance tracking
         _dataIntegration: {
           governingXml: 'data-sources-mapping.xml',
-          primaryJoinKey: 'vin',
-          mongoDbFields: [
-            'batteryPct',
-            'fuelPct',
-            'odometerKm',
-            'speedKmH',
-            'engineTempC',
-            'currentLocation',
-            'dailyRate',
-            'lastSeen',
-          ],
-          neo4jFields: [
-            'currentHubName',
-            'currentHubCity',
-            'currentHubCapacity',
-            'currentHubType',
-            'activeCustomerName',
-            'customerRiskScore',
-          ],
+          primaryJoinKey: primaryKey,
+          mongoDbFields: mapping.mongoFields,
+          neo4jFields: mapping.neo4jFields,
           integratedAt: new Date().toISOString(),
         },
       };
