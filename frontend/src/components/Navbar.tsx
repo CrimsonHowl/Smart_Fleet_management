@@ -77,8 +77,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <img
-              src="/logo_og.png?v=2"
+              src="/logo_og.png"
               alt="SmartFleet Logo"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes('logo.png')) {
+                  target.src = '/logo.png';
+                }
+              }}
               style={{
                 width: '78px',
                 height: '78px',
